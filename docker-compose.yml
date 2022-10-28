@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  backend:
+    image: ${DOCKER_REGISTRY-}mainapi
+    build:
+      context: .
+      dockerfile: MainAPI/Dockerfile
+
+  client:
+    image: client
+    build: 
+      context: ./react-app
+      dockerfile: Dockerfile
+
+  proxy: 
+    image: nginx:mainline
