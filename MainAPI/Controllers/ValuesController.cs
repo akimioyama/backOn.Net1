@@ -8,6 +8,9 @@ using System.Data;
 using Microsoft.Identity.Client;
 using System.Collections.Generic;
 using System.Security.Permissions;
+using MongoDB.Bson.IO;
+using Newtonsoft.Json;
+using JsonConvert = Newtonsoft.Json.JsonConvert;
 
 namespace MainAPI.Controllers
 {
@@ -100,19 +103,10 @@ namespace MainAPI.Controllers
             };
             result.Direction = ParameterDirection.Output;
             command.Parameters.Add(result);
-
             command.ExecuteNonQuery();
-
             string aaa = command.Parameters["@id"].Value.ToString();
-
             conn.Close();
-
-
-
             string temp = aaa.ToString();
-
-
-
             int period = 519;
             
             
@@ -259,7 +253,148 @@ namespace MainAPI.Controllers
             }
             conn.Close();
             return allApart;
+        }   
+        [HttpGet("{id}/{name}/{date}/{documentNumber}/{shiftNumber}/{documentIndex}/{fsNumber}/{ofdinn}/{price}/{ls}/{fp}")]
+        public string CreateCheque(string id, string name, 
+            string date, string documentNumber, string shiftNumber, 
+            string documentIndex, string fsNumber,
+            string ofdinn, string price, string ls, string fp)
+        {
+            string stringconn = "Data Source=LAPTOP-FPR118VN\\SQLEXPRESS;" +
+               "Initial Catalog=adresDB;" +
+               "Integrated Security=True;" +
+               "Connect Timeout=30;" +
+               "Encrypt=False;" +
+               "TrustServerCertificate=False;" +
+               "ApplicationIntent=ReadWrite;" +
+               "MultiSubnetFailover=False";
+            string sql = $"INSERT INTO [dbo].[Cheque] (" +
+                $"[id]," +
+                $"[name]," +
+                $"[date]," +
+                $"[documentNumber]," +
+                $"[shiftNumber]," +
+                $"[documentIndex]," +
+                $"[fsNumber]," +
+                $"[ofdinn]," +
+                $"[price]," +
+                $"[ls]," +
+                $"[fp])" +
+                $" VALUES ('{id}', '{name}', '{date}', '{documentNumber}', '{shiftNumber}', '{documentIndex}', '{fsNumber}', '{ofdinn}', '{price}', '{ls}', '{fp}');";
+            SqlConnection conn = new SqlConnection(stringconn);
+            conn.Open();
+            string result = "";
+            var command = new SqlCommand(sql, conn);
+            try
+            {
+                result = command.ExecuteNonQuery().ToString();
+            }
+            catch
+            {
+                result = "err";         
+            }
+            conn.Close();
+            return result;
         }
-        
+        [HttpGet("qwe/{id}")]
+        public string[] GetCheque(string id)
+        {
+            string[] Cheque = new string[10];
+            string stringconn = $"Data Source=LAPTOP-FPR118VN\\SQLEXPRESS;" +
+                $"Initial Catalog=adresDB;Integrated Security=True;" +
+                $"Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;" +
+                $"ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+            string sql = $"SELECT * FROM Cheque WHERE id = '{id}'";
+
+            SqlConnection conn = new SqlConnection(stringconn);
+            conn.Open();
+            var command = new SqlCommand(sql,conn);
+            SqlDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                Cheque[0] = reader.GetString(0).ToString();
+                Cheque[1] = reader.GetString(1).ToString();
+                Cheque[2] = reader.GetString(2).ToString();
+                Cheque[3] = reader.GetString(3).ToString();
+                Cheque[4] = reader.GetString(4).ToString();
+                Cheque[5] = reader.GetString(5).ToString();
+                Cheque[6] = reader.GetString(6).ToString();
+                Cheque[7] = reader.GetString(7).ToString();
+                Cheque[8] = reader.GetString(8).ToString();
+                Cheque[9] = reader.GetString(9).ToString();
+            }
+
+            conn.Close();
+            return Cheque;
+        }
+        [HttpGet("{hash}/{status}/{pay_id}")]
+        public bool regreg(string hash, string status, string pay_id)
+        {
+            string stringconn = $"Data Source=LAPTOP-FPR118VN\\SQLEXPRESS;" +
+                $"Initial Catalog=adresDB;Integrated Security=True;" +
+                $"Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;" +
+                $"ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+            string sql = $"INSERT INTO [dbo].[paypay] VALUES ('{hash}', '{status}', '{pay_id}')";
+            string qq = $"update paypay set [status] = '{status}', [pay_id] = '{pay_id}' where [hash] = '{hash}'\r\n" +
+                $"if @@ROWCOUNT = 0\r\nbegin\r\n\tinsert into paypay values ('{hash}', '{status}', '{pay_id}')\r\nend";
+            SqlConnection conn = new SqlConnection(stringconn);
+            conn.Open();
+            var command = new SqlCommand(qq, conn);
+            command.ExecuteNonQuery();
+            conn.Close();
+            return true;
+        }
+        [HttpGet("qq/{hash}")]
+        public IActionResult getPayId(string hash)
+        {
+            string stringconn = $"Data Source=LAPTOP-FPR118VN\\SQLEXPRESS;" +
+                $"Initial Catalog=adresDB;Integrated Security=True;" +
+                $"Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;" +
+                $"ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+            string sql = $"SELECT [status], [pay_id] FROM [adresDB].[dbo].[paypay]\r\nwhere [hash] = '{hash}'";
+            SqlConnection conn = new SqlConnection(stringconn);
+            conn.Open();
+            var command = new SqlCommand(sql, conn);
+            var list = new List<qwe>();
+            using (var reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    var temp = new qwe(
+                        reader.GetString(0).ToString(),
+                        reader.GetString(1).ToString());
+                    list.Add(temp);
+                }
+            }
+            var json = JsonConvert.SerializeObject(list);
+
+            conn.Close();
+            return Ok(json);
+        }
+        [HttpGet("qqqq/{hash}/{status}")]
+        public bool qqq (string hash, string status)
+        {
+            string stringconn = $"Data Source=LAPTOP-FPR118VN\\SQLEXPRESS;" +
+               $"Initial Catalog=adresDB;Integrated Security=True;" +
+               $"Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;" +
+               $"ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+            string sql = $"update paypay set [status] = '{status}' where [hash] = '{hash}'";
+            SqlConnection conn = new SqlConnection(stringconn);
+            conn.Open();
+            var command = new SqlCommand(sql, conn);
+            command.ExecuteNonQuery();
+            conn.Close();
+            return true;
+        }
+        public class qwe
+        {
+            public string st;
+            public string pay;
+            public qwe(string st, string pay)
+            {
+                this.st = st;
+                this.pay = pay;
+            }
+        }
     }
 }
